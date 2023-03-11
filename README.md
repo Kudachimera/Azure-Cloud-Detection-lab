@@ -99,6 +99,67 @@ Anyone who wants access to the VM will need to request and based on their IP and
 
 Search Microsoft Defender for Cloud in the search bar at the top of the Azure Portal and select the service. You will see a page similar to this. On the left pane select “environment settings”
 
+<img src="https://i.imgur.com/mKTsfaG.png"/>
+
+Select your Azure Subscription from the list provided. Upon selection, the following services will be seen on the screen. By default, Enhanced security is off but you will want to select the Enable All Microsoft Defender for Cloud Plans. You will be given a 30 free trial so be sure to disable when finished with the lab to avoid any cost. You can select then “Enable all option” and hit save.
+
+<img src="https://i.imgur.com/PImwzQf.png"/>
+
+After enabling the plan, Navigate back to the homepage for Defender for Cloud and select Workload Protections on the left pane. That will result in the following screen.
+
+<img src="https://i.imgur.com/xIJQwHP.png"/>
+
+In the Advanced protection section select “Just in time VM access” and select “Enable JIT on VM”. Make sure to select VM you created from earlier steps.
+
+<img src="https://i.imgur.com/MMTcngy.png"/>
+
+Use the default Just in Time settings and click save. RDP is listed amongst the ports. With these settings, anyone who is connecting via RDP or another management port will be constricted to a three hour time block upon approval which we will later grant.
+
+<img src="https://i.imgur.com/215NxS5.png"/>
+          
+Click save. Just in Time Access should now be enabled.
+
+Go to your VM settings and click Connect on the left pane. Select “My IP” as Source IP Request Access. Select “Request access”.
+          
+<img src="https://i.imgur.com/YFjkKhd.png"/>        
+
+If we go to the networking tab for our VM we can see our rules have been updated. Now RDP traffic is allowed for a certain amount of time only from the IP of your computer. Anyone else who attempts to establish and RDP connection will be blocked via our Just in Time Access rules.
+
+<img src="https://i.imgur.com/wUjjiSy.png"/> 
+
+Step 4: Create Log Analytics Workspace and Deploy Sentinel </h2>
+
+When working with Log Data in Azure we need somewhere to store/operate that data. Log Analytics workspace is used to collect and store log data from Azure Resources.
+
+To configure a Log Analytic workspace:
+
+Search “Microsoft Sentinel” in Search Bar in Azure Portal. This will prompt you to create a Log Analytics Workspace.
+
+Use the same resource group used for the Azure Virtual Machine you created in the previous step when filling out the necessary fields to create your Log Analytics workspace.
+
+<img src="https://i.imgur.com/WICFiI1.png"/>
+
+
+Click “review and create” to create the Log Analytics Workspace
+
+After creating the Log Analytics Workspace search Sentinel in the search bar.
+
+<img src="https://i.imgur.com/fzQ1BkC.png"/>
+                                         
+Scroll to the bottom of the page and select Add                                    
+
+
+<img src="https://i.imgur.com/LAwcFdN.png"/>
+                                          
+ After clicking create, you should see this screen upon deployment :
+                                          
+<img src="https://i.imgur.com/O4NDZOG.png"/>
+                                          
+   <br />
+<h2> Part 2: Getting Data into Sentinel </h2>                                       
+                                          
+
+
 
 
  <br />
