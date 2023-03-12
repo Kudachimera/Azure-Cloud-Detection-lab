@@ -281,5 +281,25 @@ When the query is run we get this result.
 
 As you can see, we have a list of all the times we have had a successful login on our VM. However, as you can see the Account Name field is empty a sentinel is not automatically putting that data into that field. We will go over how to populate that field later in the lab when we create our analytic rule.
 
+<br />
+<h2> Part 5: Writing Analytic Rule and Generating Scheduled Task </h2> 
+We can have the option to be alerted to certain events by setting up analytic rules. The Analytic rule will check our VM for the activity that matches the rule logic and generate an alert any time that activity is observed. There will be so some details provided in the alert that can help an analyst start their investigation into determining whether the event in the alert is a false positive or true positive.
+
+<img src="https://i.imgur.com/fUs1ypj.png"/>
+
+These are a list of alerts that we can enable our SIEM to monitor that come out of the box. If you wish, you can expand some and see what they are comprised of by clicking create a rule and following the onscreen tasks to see the rule logic and as well as enabling the rule. However, the rules will only fire if the logic is met by a security event on your VM.
+
+<h2> Scheduled Task and Persistence Techniques </h2> 
+The final part of this lab is to create our own custom rule to detect potentially malicious activity on our VM. In Windows Task scheduler you have the option to create a scheduled task. A scheduled task is essentially a way to automate certain activities on your machine .
+
+For instance, you could set up a scheduled task that opens google chrome at a certain time every day. While many times scheduled task can be a harmless event this can also be used as a persistence technique for malicious actors
+
+According to the MITRE Attack Framework, “Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. Utilities exist within all major operating systems to schedule programs or scripts to be executed at a specified date and time”.
+
+In this lab, our scheduled task will not be associated with any malicious activity as we will set up a scheduled task that opens Internet Explorer at a certain time but we will create an analytic rule to monitor for that specific action so we can be alerted to the to the activity in our SIEM in order to simulate the scenario.
+
+The Windows Security Event ID that corresponds to scheduled task creation is 4698. However, these events are not logged by default in the Windows event viewer. To enable logging for this event we need to make some changes to the Windows Security policy in our VM.
+
+Search for “Local Security Policy” in Windows 10 VM and expand “Advanced Audit Policy Configuration”
 
  <br />
