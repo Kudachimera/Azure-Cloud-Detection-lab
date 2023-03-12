@@ -156,10 +156,130 @@ Scroll to the bottom of the page and select Add
 <img src="https://i.imgur.com/O4NDZOG.png"/>
                                           
    <br />
-<h2> Part 2: Getting Data into Sentinel </h2>                                       
-                                          
+<h2> Part 2: Getting Data into Sentinel </h2>   
 
+After the Sentinel Deployment, if we go to the incidents tab on the left we see we don’t have any incidents currently as there is no data being fed into sentinel. We are next going to utilize data connectors and create a data collection rule to bring in data from our Windows 10 VM.                                        
 
+<img src="https://i.imgur.com/PpkC1vj.png"/>
+
+Go to the Data connectors Tab. This is where we can select the type of data that we want to bring into our SIEM
+
+<img src="https://i.imgur.com/kc0MxJ1.png"/>
+
+In the Search bar type in “Windows” and you will see Windows Security Events via AMA. Select that option and click “Open Connector Page”.
+
+<img src="https://i.imgur.com/R9GjBw1.png"/>
+
+Click “Add Data collection rule.”
+
+<img src="https://i.imgur.com/3HYZUhw.png"/>
+
+Give your rule a name and connect to it your resource group we have used for all resources thus far.
+
+<img src="https://i.imgur.com/80XUS31.png"/>
+
+Click “Add resources”.
+
+<img src="https://i.imgur.com/C1EDusp.png"/>
+
+Select the Virtual Machine created in Step 2.
+
+<img src="https://i.imgur.com/GoWFkUu.png"/>
+
+Your Virtual Machine should now be shown.
+
+<img src="https://i.imgur.com/zUw6Mdr.png"/>
+
+Select “All Security Events”
+
+<img src="https://i.imgur.com/fOI7Ap0.png"/>
+
+The data collection rule should have a “Validation Passed” screen.
+
+<img src="https://i.imgur.com/Lw4Cv3G.png"/>
+
+Refresh the page until the “Connected” status is shown.
+
+<img src="https://i.imgur.com/67uq1QC.png"/>
+
+<br />
+<h2> Part 3: Generating Security Events </h2>  
+
+Now that our VM is connected to Sentinel and our Log Analytics Workspace we need to transport data from our Logs. To do this we need to simply need to perform some action on the Windows 10 events that will generate security alerts.
+
+Windows keeps a record of several types of security events. These events cover several potential scenarios such as privileged use, Logon events, processes, policy changes, and much more.
+
+We will now observe some Windows security events on our Virtual Machine.
+
+Utilize the Azure Portal to navigate to the VM created earlier in the lab.
+
+Click “Start” at the top page to turn on the VM if its not on already . Enable Just in time Access if necessary.
+
+<img src="https://i.imgur.com/vZQlzNX.png"/>
+
+Under Networking, you are given a public IP. Use an RDP on your PC Client such as Remote Desktop Connection to access your VM by entering in the public IP address.
+
+(you might need to refresh after starting the virtual machine to have the public IP show up)
+
+<img src="https://i.imgur.com/bWleGc2.png"/>
+
+<img src="https://i.imgur.com/kcZEhhW.png"/>
+
+~ From here you will be prompted to enter the username and password created when you made the VM.
+
+~ Once you successfully authenticate to the virtual machine and are logged in, search for Event Viewer and open the program.
+
+~ As you can see there are several types of logs Windows Collects. Application logs, Security Logs, Setup, System, and Forwarded Events.
+
+<img src="https://static.wixstatic.com/media/0f83c5_d04e201cb6634bb087ae1e259cdaefeb~mv2.png/v1/fill/w_740,h_176,al_c,q_90/0f83c5_d04e201cb6634bb087ae1e259cdaefeb~mv2.webp"/>
+
+~ Our focus in this lab will be on Windows Security events.
+
+Click “Security” and observe the events.
+
+As you can see there are several security events in event viewer. Let’s drill into one of these events.
+
+Use the find option and search for 4624
+
+<img src="https://static.wixstatic.com/media/0f83c5_8566c014783d44c4a1e91265094bb974~mv2.png/v1/fill/w_740,h_400,al_c,q_90/0f83c5_8566c014783d44c4a1e91265094bb974~mv2.webp"/>
+
+When we select event 4624 we see that 4624 ID is indicative of a successful logon. We can also examine more detailed information about the logon if need be.
+
+<img src="https://static.wixstatic.com/media/0f83c5_e942ee26d1e1428cb381586a34199987~mv2.png/v1/fill/w_740,h_166,al_c,q_90/0f83c5_e942ee26d1e1428cb381586a34199987~mv2.webp"/>
+
+<br />
+<h2> Part 4: Kusto Query Language </h2> 
+The purpose of a SIEM such as Azure Sentinel would be to bring data like this into a centralized location. In an enterprise, we would want data coming from all our endpoints and virtual machines to make it easier for an analyst to get the information that is needed quickly.
+
+Let’s go back to Azure Sentinel and pull this event from our Sentinel Logs.
+
+In the Sentinel, Main Page click “Logs”
+
+<img src="https://i.imgur.com/pdGSHFA.png"/>
+
+Logs should bring up this page.
+
+<img src="https://i.imgur.com/uwJKAWP.png"/>
+
+In the section where it says “Type your query” we are going to use the following KQL (Kusto Query Language) Logic:
+
+SecurityEvent
+
+| where EventID == 4624
+
+Every SIEM has a search language that makes it simple to extract data from Logs. In Sentinel, that language is called KQL or Kusto Query Language. While there are many different syntax rules and ways to construct queries in KQL we will be using a few basic KQL commands to extract the data and write our analytics rule later in the lab.
+
+Let’s break down the meaning of this query
+
+Security Event refers to the event table we are pulling the data from. All the events we observed in the event viewer are stored there.
+
+Where command filters on a specific category. In this case, we only want events that correspond to successful logins.
+
+When the query is run we get this result.
+
+<img src="https://i.imgur.com/LYg6nOc.png"/>
+
+As you can see, we have a list of all the times we have had a successful login on our VM. However, as you can see the Account Name field is empty a sentinel is not automatically putting that data into that field. We will go over how to populate that field later in the lab when we create our analytic rule.
 
 
  <br />
