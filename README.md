@@ -26,6 +26,12 @@ In this lab, we will:
 
 - Utilize MITRE ATT&CK to map adversary tactics, techniques, detection and mitigation procedures
 
+<h2>Utilities Used</h2>
+
+- <b>Microsoft Azure cloud services - Log Analytics Workspace, Virtual Machines, and Azure Sentinel </b> 
+- <b>Kusto Query Language </b>
+- <b> Windows Remote Desktop </b>
+- <b> MITRE ATT&CK Framework </b>
 <br />
 <h2> MICROSOFT SENTINEL LAB NETWORK DESIGN & TOPOLOGY  </h2>
 <img src="https://static.wixstatic.com/media/1f97f7_b70c18318efd4e83ae32410cf1b69fd6~mv2.png/v1/fill/w_740,h_774,al_c,q_90/1f97f7_b70c18318efd4e83ae32410cf1b69fd6~mv2.webp"/>
@@ -283,6 +289,7 @@ As you can see, we have a list of all the times we have had a successful login o
 
 <br />
 <h2> Part 5: Writing Analytic Rule and Generating Scheduled Task </h2> 
+
 We can have the option to be alerted to certain events by setting up analytic rules. The Analytic rule will check our VM for the activity that matches the rule logic and generate an alert any time that activity is observed. There will be so some details provided in the alert that can help an analyst start their investigation into determining whether the event in the alert is a false positive or true positive.
 
 <img src="https://i.imgur.com/fUs1ypj.png"/>
@@ -302,4 +309,149 @@ The Windows Security Event ID that corresponds to scheduled task creation is 469
 
 Search for “Local Security Policy” in Windows 10 VM and expand “Advanced Audit Policy Configuration”
 
+<img src="https://static.wixstatic.com/media/0f83c5_4f71034fbfd840a8b45074613c362efb~mv2.png/v1/fill/w_740,h_556,al_c,lg_1,q_90/0f83c5_4f71034fbfd840a8b45074613c362efb~mv2.webp"/>
+
+Expand “System Audit Policies” and “Select Object Access”. Then select the “Audit Other Object Access”
+
+<img src="https://static.wixstatic.com/media/0f83c5_4a2880473a71434294ca7f83714bd0c2~mv2.png/v1/fill/w_740,h_546,al_c,lg_1,q_90/0f83c5_4a2880473a71434294ca7f83714bd0c2~mv2.webp"/>
+
+Enable “Success” and “Failure”
+
+<img src="https://static.wixstatic.com/media/0f83c5_aeee7f7dc1f94a489ef3b3f52ee6c28e~mv2.png/v1/fill/w_546,h_669,al_c,q_90/0f83c5_aeee7f7dc1f94a489ef3b3f52ee6c28e~mv2.webp"/>
+
+Logging is now enabled for the scheduled task event.
+
+Creating our scheduled task
+
+To detect a scheduled task creation, we need to generate some activity in our VM.
+
+Open Windows Task Scheduler and navigate to “Create Task” . Add a name and change the “Configure For” Operating system to Windows 10.
+
+<img src="https://static.wixstatic.com/media/0f83c5_64d55a997bbd44d3955fc35e7b269839~mv2.png/v1/fill/w_740,h_562,al_c,q_90/0f83c5_64d55a997bbd44d3955fc35e7b269839~mv2.webp"/>
+
+Navigate to triggers and click “new” and schedule the task for a time close to your current time. Then select “OK”
+
+Navigate to the action tap and select start a program.
+
+Then open program or script and select a program to run every time this task runs. I will select Internet Explorer.
+
+<img src="https://static.wixstatic.com/media/0f83c5_edde2aec658e4d4bb32e5cbecafaadc7~mv2.png/v1/fill/w_740,h_560,al_c,q_90/0f83c5_edde2aec658e4d4bb32e5cbecafaadc7~mv2.webp"/>
+
+After this do not worry about the conditions and settings do not change any of the settings and click “OK”.
+
+This will create your scheduled task you can now go to event viewer and search for that event id 4698 in the security logs. You can see here there are several instances of this event.
+
+<img src="https://static.wixstatic.com/media/0f83c5_f4f958e0c95f4c0dbb6b01d277730581~mv2.png/v1/fill/w_740,h_76,al_c,q_90/0f83c5_f4f958e0c95f4c0dbb6b01d277730581~mv2.webp"/>
+
+4C. Writing Analytic Rule
+
+Lastly, we need to write some KQL logic to alert us when a scheduled task is created.
+
+Go to the sentinel Home Page and click “Analytics Rules” and click create at the top of the page and select the scheduled query option.
+
+<img src="https://static.wixstatic.com/media/0f83c5_2740b1c2416b48cfbaf738cc3b8e7ba8~mv2.png/v1/fill/w_740,h_608,al_c,lg_1,q_90/0f83c5_2740b1c2416b48cfbaf738cc3b8e7ba8~mv2.webpwebp"/>
+
+Here we are simply providing some information about the alert to the analyst.
+
+Next, we will come up with the alert logic that causes are our alert to fire.
+
+Most of the logic will be like the KQL Query that we created earlier for logon event.
+
+Security Event
+
+| where EventID == 4698
+
+This query will pull instances of scheduled task creation as shown here in our logs.
+
+<img src="https://static.wixstatic.com/media/0f83c5_574aecde80934bb6839db87f49f2c877~mv2.png/v1/fill/w_740,h_355,al_c,q_90/0f83c5_574aecde80934bb6839db87f49f2c877~mv2.webp"/>
+
+Expand the log for the scheduled task you created in the previous step and look at the Event Data category.
+
+You should see something like this:
+
+<img src="https://static.wixstatic.com/media/0f83c5_4ad40dd4849d496d9d097ad76b278dc4~mv2.png/v1/fill/w_740,h_263,al_c,lg_1,q_90/0f83c5_4ad40dd4849d496d9d097ad76b278dc4~mv2.webp"/>
+
+There is a lot of useful data in here such as the name of the scheduled task, the Task Name field, the ClientProcessID, the username of the account that created the scheduled task amongst other info.
+
+However, if you use the project command to display these data fields as columns when you run the query, we need to add this to our logic.
+
+SecurityEvent  
+
+ | where EventID == 4698
+ 
+ | parse EventData with * '<Data Name="SubjectUserName">' User '</Data>' *
+ 
+| parse EventData with * '<Data Name="TaskName">' NameofSceuduledTask '</Data>' *
+
+ | parse EventData with * '<Data Name="ClientProcessId">' ClientProcessID '</Data>' *
+ 
+ | project Computer, TimeGenerated, ClientProcessID, NameofSceuduledTask, User
+ 
+ The Parse command will allow us to extract data from the Event Data Field that we find important.
+
+This extracted the SubjectUserName , TaskName, ClientProcessID (Computer automatically displays) .
+
+The above logic allows me to assign those to new categories such as User, NameofScheduledTask, and ClientProcessID respectively. When we project our new fields, the output is the following:
+
+<img src="https://static.wixstatic.com/media/0f83c5_66a8f780cd1346048d99475437e91065~mv2.png/v1/fill/w_740,h_174,al_c,lg_1,q_90/0f83c5_66a8f780cd1346048d99475437e91065~mv2.webp"/>
+
+As you can see we’re able to generate Event Data and place it into its own category for readability.
+
+Copy and Paste the above query into the editor under the “Set Rule Logic” tab
+
+<img src="https://static.wixstatic.com/media/0f83c5_613f15a1e5cd42e39a94f9c1610b1728~mv2.png/v1/fill/w_740,h_319,al_c,lg_1,q_90/0f83c5_613f15a1e5cd42e39a94f9c1610b1728~mv2.webp"/>
+
+The Alert Enrichment section is below this. Enriching an alert simply is the process of adding context to the alert to make it easier for the analyst to investigate.
+
+As opposed to having to query this data as we did in the analytic rule Alert Enrichment allows us to put the necessary data into the alert details as Entities so the analyst can begin investigating those specific components.
+
+Use the following settings for entity mapping.
+
+<img src="https://static.wixstatic.com/media/0f83c5_104d0f39bcef46eda3ecbe9dd44fbdb9~mv2.png/v1/fill/w_740,h_378,al_c,lg_1,q_90/0f83c5_104d0f39bcef46eda3ecbe9dd44fbdb9~mv2.webp"/>
+ 
+ The only other setting that need to be changed for the purposes of this lab is how often the query is run and when to look up the data. Change defaults to the following:
+ 
+ <img src="https://static.wixstatic.com/media/0f83c5_642e067ffa8345f5b699e334159214ac~mv2.png/v1/fill/w_740,h_134,al_c,lg_1,q_90/0f83c5_642e067ffa8345f5b699e334159214ac~mv2.webp"/>
+ 
+ Incident Settings and Automated Response are not necessary to alter for this lab so you can go ahead to “review and create” to make the Analytic Rule.
+ 
+  <img src="https://static.wixstatic.com/media/0f83c5_c03903ef3e8941ae8087471b4a5de360~mv2.png/v1/fill/w_740,h_585,al_c,q_90/0f83c5_c03903ef3e8941ae8087471b4a5de360~mv2.webp"/>
+  
+  Once you create your analytic rule the final step is to create another scheduled task in your Windows VM and wait for the alert to trigger in Sentinel
+
+*Note this might take up to 10 minutes. Refresh the Incidents page periodically until the Alert triggers. When the alert fires this is what you should see
+
+ <img src="https://static.wixstatic.com/media/0f83c5_f4b6062c49d047ee81bcd65bd111cb13~mv2.png/v1/fill/w_740,h_397,al_c,q_90/0f83c5_f4b6062c49d047ee81bcd65bd111cb13~mv2.webp"/>
+ 
+ On the right pane we see all the necessary information we would need to begin investigating the alert such as the host machine, user account, process ID of the task, and the name of the scheduled task.
+
+While in this case, the scheduled task is non-malicious, in the event it was, from here an analyst would investigate the entities such as the user account, the scheduled task, host, etc. with other tools such as an EDR solution and other security tools to decide if this is a false positive or true positive
+
+<br />
+<h2> Part 6: MITRE ATT&CK </h2> 
+
+The observed MITRE ATT&CK tactic used in this lab is [TA0003 Persistence](https://attack.mitre.org/tactics/TA0003/) which essentially allows a malicious actor to maintain a foothold in an environment.
+ 
+ <img src=" https://static.wixstatic.com/media/1f97f7_18710847426d42cda558b5d08402d6d8~mv2.png/v1/fill/w_740,h_223,al_c,q_90/1f97f7_18710847426d42cda558b5d08402d6d8~mv2.webp"/>
+ 
+ We can dig further into this by showing the technique of using a scheduled Task/Job.
+ 
+  <img src="https://static.wixstatic.com/media/1f97f7_0de881b56ed946019e9bec42783b070e~mv2.png/v1/fill/w_740,h_293,al_c,q_90/1f97f7_0de881b56ed946019e9bec42783b070e~mv2.webp"/>
+  
+Even further, we can dig further into the specific sub technique of [T1053.005](https://attack.mitre.org/techniques/T1053/005/)
+
+<img src="https://static.wixstatic.com/media/1f97f7_3d9aeaf05cc844eea89468d2c694237b~mv2.png/v1/fill/w_740,h_291,al_c,q_90/1f97f7_3d9aeaf05cc844eea89468d2c694237b~mv2.webp"/>
+
+Detection
+
+As observed. monitoring and logging of specific windows event id was used to detect this activity. However, MITRE also has more recommendations for detection.
+
+<img src="https://static.wixstatic.com/media/1f97f7_33d9e225925041468bb0f9f1b86cb91f~mv2.png/v1/fill/w_740,h_132,al_c,q_90/1f97f7_33d9e225925041468bb0f9f1b86cb91f~mv2.webp"/>
+
+Mitigation
+
+[MITRE ID M1019](https://attack.mitre.org/mitigations/M1018//) – User Account Management suggests that user account privileges should be limited to only authorize admins to create scheduled tasks on remote systems
+
+<img src="https://static.wixstatic.com/media/1f97f7_4b1a1a7397f84a039b39ba1a9ffa30e3~mv2.png/v1/fill/w_740,h_275,al_c,q_90/1f97f7_4b1a1a7397f84a039b39ba1a9ffa30e3~mv2.webp"/> 
+ 
  <br />
